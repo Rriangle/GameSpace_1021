@@ -1,0 +1,355 @@
+﻿@* =============================================================
+   _FloatingDock.cshtml（單窗版）
+   用途：右下角單一聊天小視窗。從任一元素的 data-chat-open="<UserId>" 觸發打開；
+        若已開啟則切換對象，載入新對象的歷史。訊息即時由 SignalR ChatHub 推送。
+   依賴：
+     - ILoginIdentity（開發期以 Cookie gp_dev_uid 或 appsettings:DevLogin:UserId 取得目前使用者）
+     - SignalR /social_hub/chatHub（Program.cs 要 AddSignalR + MapHub）
+     - （可選）ChatController.History / MarkRead（沒實作也能即時聊天）
+   重點：
+     - 連線成功前禁用送出鍵
+     - History 欄位同時相容 camelCase / PascalCase
+     - 時間顯示防止 Invalid Date
+   ============================================================= *@
+
+@using GamiPort.Infrastructure.Login
+@inject ILoginIdentity Login
+@{
+    var snap = await Login.GetAsync();
+    var meId = (snap.IsAuthenticated && snap.UserId.HasValue) ? snap.UserId.Value : 0;
+    var meSrc = snap.Source ?? "None";
+
+    // 若尚未實作，Url.Action 會是 null；前端會自動略過，不影響即時聊天。
+    var historyUrl = Url.Action("History", "Chat", new { area = "social_hub" });
+    var readUrl = Url.Action("MarkRead", "Chat", new { area = "social_hub" });
+}
+
+<style>
+    .gp-chat-dock {
+        position: fixed;
+        right: 12px;
+        bottom: 12px;
+        z-index: 1075;
+        max-width: calc(100vw - 24px)
+    }
+
+    .gp-chat-win {
+        width: 320px;
+        max-height: 60vh;
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: .75rem;
+        box-shadow: 0 6px 24px rgba(0,0,0,.12);
+        display: none;
+        flex-direction: column;
+        overflow: hidden
+    }
+
+    .gp-chat-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 10px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef
+    }
+
+    .gp-chat-title {
+        font-size: .95rem;
+        font-weight: 600
+    }
+
+    .gp-chat-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px
+    }
+
+    .gp-chat-btn {
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 1;
+        padding: 4px 6px;
+        border-radius: .375rem
+    }
+
+        .gp-chat-btn:hover {
+            background: #e9ecef
+        }
+
+    .gp-chat-body {
+        flex: 1;
+        overflow: auto;
+        padding: 8px
+    }
+
+    .gp-chat-input {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        padding: 8px;
+        border-top: 1px solid #e9ecef
+    }
+
+        .gp-chat-input input {
+            flex: 1;
+            height: 38px;
+            border: 1px solid #ced4da;
+            border-radius: .5rem;
+            padding: 0 10px
+        }
+
+        .gp-chat-input button {
+            height: 38px;
+            border: 0;
+            border-radius: .5rem;
+            background: #0d6efd;
+            color: #fff;
+            padding: 0 12px;
+            cursor: pointer
+        }
+
+            .gp-chat-input button:disabled {
+                opacity: .55;
+                cursor: not-allowed
+            }
+
+    .gp-chat-msg {
+        margin-bottom: 8px
+    }
+
+        .gp-chat-msg.you {
+            text-align: right
+        }
+
+        .gp-chat-msg .meta {
+            font-size: .72rem;
+            color: #6c757d
+        }
+
+        .gp-chat-msg .bubble {
+            display: inline-block;
+            margin-top: 2px;
+            padding: 6px 10px;
+            border-radius: .75rem;
+            background: #f1f3f5;
+            max-width: 80%;
+            word-break: break-word
+        }
+
+        .gp-chat-msg.you .bubble {
+            background: #e7f1ff
+        }
+
+    .gp-chat-min .gp-chat-body, .gp-chat-min .gp-chat-input {
+        display: none
+    }
+    @@media (max-width: 420px) {
+        .gp-chat-win
+
+    {
+        width: 96vw;
+        max-height: 70vh;
+        right: auto;
+        left: 2vw
+    }
+
+    .gp-chat-dock {
+        left: 2vw;
+        right: auto
+    }
+
+    }
+</style>
+
+<div class="gp-chat-dock" id="gp-chat-dock">
+    <div class="gp-chat-win" id="gp-chat-win" data-peer="">
+        <div class="gp-chat-head">
+            <div class="gp-chat-title">
+                <span class="me">我：User #<span id="gp-me-id">0</span></span>
+                <span> ↔ </span>
+                <span class="peer">對方：User #<span id="gp-peer-id">0</span></span>
+            </div>
+            <div class="gp-chat-actions">
+                <button class="gp-chat-btn" id="gp-min" title="最小化">—</button>
+                <button class="gp-chat-btn" id="gp-close" title="關閉">×</button>
+            </div>
+        </div>
+        <div class="gp-chat-body" id="gp-body" tabindex="0"></div>
+        <div class="gp-chat-input">
+            <input type="text" id="gp-input" maxlength="255" placeholder="輸入訊息，Enter 送出…" />
+            <button id="gp-send" disabled>送出</button> @* 連線成功後才會啟用 *@
+        </div>
+    </div>
+</div>
+
+<!-- 注意：先載入 SignalR，再執行初始化腳本（避免時序問題） -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+
+<script>
+    // 立即 IIFE，避免汙染全域；僅暴露 data-chat-open 協定
+    (() => {
+      // ----- 目前使用者與端點設定 -----
+      const ME_ID = @meId;
+      const ME_SRC = "@meSrc";
+      const URLS = {
+        hub: "/social_hub/chatHub",
+        history: "@(historyUrl ?? "")",
+        read: "@(readUrl ?? "")"
+      };
+
+      // ----- DOM 參照 -----
+      const win    = document.getElementById('gp-chat-win');
+      const meSpan = document.getElementById('gp-me-id');
+      const peerSpan = document.getElementById('gp-peer-id');
+      const body   = document.getElementById('gp-body');
+      const input  = document.getElementById('gp-input');
+      const btnSend= document.getElementById('gp-send');
+      const btnMin = document.getElementById('gp-min');
+      const btnClose = document.getElementById('gp-close');
+
+      // ----- 視窗/連線狀態 -----
+      let currentPeerId = 0; // 正在聊天的對象
+      let lastIso = "";      // 消息串最後一則的時間（ISO），用於已讀
+      let conn;              // SignalR 連線
+
+      meSpan.textContent = String(ME_ID);
+
+      // UI：顯示/隱藏/清空
+      function showWin(){ if (win.style.display !== "flex") win.style.display = "flex"; }
+      function hideWin(){ win.style.display = "none"; }
+      function clearMsg(){ body.innerHTML = ""; lastIso = ""; }
+
+      // 視窗按鈕
+      btnMin.addEventListener('click', () => win.classList.toggle('gp-chat-min'));
+      btnClose.addEventListener('click', () => { currentPeerId = 0; hideWin(); });
+
+      // 追加訊息至訊息串（含防 Invalid Date）
+      function push(senderId, sentAtIso, content){
+        const mine = (senderId === ME_ID);
+        const wrap = document.createElement('div');
+        wrap.className = "gp-chat-msg" + (mine ? " you" : "");
+
+        const dt = sentAtIso ? new Date(sentAtIso) : null;
+        const whenStr = (dt && !isNaN(dt)) ? dt.toLocaleString() : "";
+
+        wrap.innerHTML = `
+          <div class="meta">User #${senderId}${whenStr ? " · " + whenStr : ""}</div>
+          <div class="bubble"></div>`;
+        wrap.querySelector('.bubble').textContent = content || "";
+        body.appendChild(wrap);
+        body.scrollTop = body.scrollHeight;
+        if (sentAtIso) lastIso = sentAtIso;
+      }
+
+      // 確保/建立 SignalR 連線；成功後啟用送出鍵
+      async function ensureConn(){
+        if (conn) return conn;
+        if (!window.signalR || !window.signalR.HubConnectionBuilder) throw new Error("SignalR 尚未載入");
+        conn = new signalR.HubConnectionBuilder()
+          .withUrl(URLS.hub)
+          .withAutomaticReconnect()
+          .build();
+
+        // 伺服器推送的直接訊息
+        conn.on("ReceiveDirect", p => {
+          const peer = (p.senderId === ME_ID) ? p.receiverId : p.senderId;
+          if (peer !== currentPeerId) return; // 只處理目前對象（其他對象可做總徽章，這版先省略）
+          push(p.senderId, p.sentAtIso, p.content);
+          if (p.senderId !== ME_ID) markRead();
+        });
+
+        try{
+          await conn.start();
+          btnSend.disabled = false;
+        }catch(e){
+          console.error("SignalR 連線失敗，稍後自動重試：", e);
+          setTimeout(() => ensureConn().catch(()=>{}), 2000);
+        }
+        return conn;
+      }
+
+      // 送出訊息（需有對象與非空內容）
+      async function send(){
+        const t = (input.value || "").trim();
+        if (!t || currentPeerId <= 0) return;
+        input.value = "";
+        try{
+          await ensureConn();
+          await conn.invoke("SendMessageTo", currentPeerId, t);
+        }catch(e){
+          const msg = (e && e.message && e.message.includes("USER_NOT_FOUND"))
+            ? "對方 ID 不存在（請先建立測試使用者）"
+            : "無法送出（未連線？）";
+          console.warn(e); alert(msg);
+        }
+      }
+
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+      btnSend.addEventListener('click', send);
+
+      // 已讀：視窗互動或捲到底即觸發（Hub 必須；REST MarkRead 可選）
+      async function markRead(){
+        if (!lastIso || currentPeerId <= 0 || ME_ID <= 0) return;
+        try{ await ensureConn(); await conn.invoke("NotifyRead", currentPeerId, lastIso); }catch(e){}
+        if (URLS.read){
+          try{
+            await fetch(URLS.read, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ otherId: currentPeerId, upToIso: lastIso }) });
+          }catch(e){}
+        }
+      }
+      body.addEventListener('click', markRead);
+      body.addEventListener('scroll', () => {
+        if ((body.scrollTop + body.clientHeight) >= (body.scrollHeight - 8)) markRead();
+      });
+
+      // 載入歷史（若有端點）；相容 camelCase / PascalCase
+      async function loadHistory(peerId){
+        if (!URLS.history) return;
+        try{
+          const r = await fetch(`${URLS.history}?otherId=${peerId}`);
+          if (!r.ok) return;
+          const arr = await r.json();
+          if (!Array.isArray(arr)) return;
+          let last = "";
+          for (const m of arr){
+            const sid = m.senderId ?? m.SenderId;
+            const iso = m.sentAtIso ?? m.SentAtIso;
+            const txt = m.content   ?? m.Content ?? "";
+            push(sid, iso, txt);
+            last = iso || last;
+          }
+          if (last) lastIso = last;
+        }catch(e){ console.warn("載入歷史失敗（略過）", e); }
+      }
+
+      // 全站監聽：點任何 data-chat-open="<UserId>" → 開啟/切換聊天對象
+      document.addEventListener('click', e => {
+        const el = e.target.closest('[data-chat-open]');
+        if (!el) return;
+        if (ME_ID <= 0){ alert("請先設定測試用戶：?asUser=10000001 或設定 DevLogin:UserId"); return; }
+
+        const peerId = parseInt(el.getAttribute('data-chat-open') || "0", 10);
+        if (!peerId || peerId === ME_ID) return; // 避免與自己對話
+
+        if (peerId !== currentPeerId){
+          // 切換對象：更新標頭、清空訊息、載入歷史、確保連線、顯示視窗
+          currentPeerId = peerId;
+          win.dataset.peer = String(peerId);
+          peerSpan.textContent = String(peerId);
+          clearMsg();
+          showWin();
+          ensureConn().then(() => { btnSend.disabled = false; });
+          loadHistory(peerId);
+        }else{
+          // 同一對象 → 只把視窗拉出來
+          showWin();
+          body.scrollTop = body.scrollHeight;
+        }
+      });
+
+      // 備註：若你想在頁面載入就自動開某位對象，直接在某個元素（甚至 body）放 data-chat-open 也會觸發
+    })();
+</script>
