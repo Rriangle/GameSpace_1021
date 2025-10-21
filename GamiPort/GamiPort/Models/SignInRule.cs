@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace GameSpace.Models;
+namespace GamiPort.Models;
 
 public partial class SignInRule
 {

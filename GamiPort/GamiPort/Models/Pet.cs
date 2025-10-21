@@ -43,6 +43,20 @@ public partial class Pet
 
     public DateTime PointsGainedTimeLevelUp { get; set; }
 
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedAt { get; set; }
+
+    public int? DeletedBy { get; set; }
+
+    public string? DeleteReason { get; set; }
+
+    public int CurrentExperience { get; set; }
+
+    public int? ExperienceToNextLevel { get; set; }
+
+    public int? TotalPointsGainedLevelUp { get; set; }
+
     public virtual ICollection<MiniGame> MiniGames { get; set; } = new List<MiniGame>();
 
     public virtual User User { get; set; } = null!;

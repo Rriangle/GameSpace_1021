@@ -45,6 +45,14 @@ public partial class MiniGame
 
     public bool Aborted { get; set; }
 
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedAt { get; set; }
+
+    public int? DeletedBy { get; set; }
+
+    public string? DeleteReason { get; set; }
+
     public virtual Pet Pet { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;
