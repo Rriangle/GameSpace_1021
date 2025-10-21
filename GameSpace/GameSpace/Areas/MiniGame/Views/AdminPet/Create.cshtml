@@ -1,0 +1,245 @@
+﻿@model GameSpace.Areas.MiniGame.Models.ViewModels.AdminPetCreateViewModel
+@{
+    ViewData["Title"] = "�s�W�d��";
+    Layout = "~/Areas/MiniGame/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- �������D -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">�s�W�d��</h1>
+        <div>
+            <a href="@Url.Action("Index", "AdminPet")" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> ��^�C��
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">�d����T</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        
+                        <div class="form-group">
+                            <label asp-for="PetName" class="control-label">�d���W�� *</label>
+                            <input asp-for="PetName" class="form-control" placeholder="�п�J�d���W��" />
+                            <span asp-validation-for="PetName" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="PetDescription" class="control-label">�d���y�z *</label>
+                            <textarea asp-for="PetDescription" class="form-control" rows="4" placeholder="�п�J�d���y�z"></textarea>
+                            <span asp-validation-for="PetDescription" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="PetType" class="control-label">�d������ *</label>
+                                    <select asp-for="PetType" class="form-control">
+                                        <option value="">�п���d������</option>
+                                        <option value="��">��</option>
+                                        <option value="��">��</option>
+                                        <option value="��">��</option>
+                                        <option value="��">��</option>
+                                        <option value="�ߤl">�ߤl</option>
+                                        <option value="�ܹ�">�ܹ�</option>
+                                        <option value="�Q�t">�Q�t</option>
+                                        <option value="��L">��L</option>
+                                    </select>
+                                    <span asp-validation-for="PetType" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Rarity" class="control-label">�}���� *</label>
+                                    <select asp-for="Rarity" class="form-control" id="raritySelect">
+                                        <option value="">�п�ܵ}����</option>
+                                        <option value="���q">���q</option>
+                                        <option value="�}��">�}��</option>
+                                        <option value="�v��">�v��</option>
+                                        <option value="�ǻ�">�ǻ�</option>
+                                    </select>
+                                    <span asp-validation-for="Rarity" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="DropRate" class="control-label">��o���v *</label>
+                                    <input asp-for="DropRate" type="number" class="form-control" placeholder="�п�J��o���v" step="0.01" min="0.01" max="100" />
+                                    <span asp-validation-for="DropRate" class="text-danger"></span>
+                                    <small class="form-text text-muted">���v�d��G0.01% - 100%</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="IsActive" class="control-label">���A</label>
+                                    <div class="form-check">
+                                        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                        <label class="form-check-label" for="IsActive">
+                                            �ҥ�
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="PetImageUrl" class="control-label">�d���Ϥ���}</label>
+                            <input asp-for="PetImageUrl" type="url" class="form-control" placeholder="�п�J�d���Ϥ���}" />
+                            <span asp-validation-for="PetImageUrl" class="text-danger"></span>
+                            <small class="form-text text-muted">�i��A�Ω�����d���Ϥ�</small>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> �إ��d��
+                            </button>
+                            <a href="@Url.Action("Index", "AdminPet")" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> ����
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">�إ߶���</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <i class="fas fa-paw fa-3x text-primary mb-3"></i>
+                        <h5>�d���إߪ`�N�ƶ�</h5>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            �d���W�٭n�W�S�B�l�ޤH
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            �y�z�n�Ͱʦ���
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            �}���׼v�T��o���v
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            ��o���v�n�X�z�]�w
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            �i�H��ܬO�_�ߧY�ҥ�
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">�}���׻���</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <span class="badge badge-secondary">���q</span>
+                        <small class="text-muted">��o���v�G10% - 50%</small>
+                    </div>
+                    <div class="mb-3">
+                        <span class="badge badge-primary">�}��</span>
+                        <small class="text-muted">��o���v�G1% - 10%</small>
+                    </div>
+                    <div class="mb-3">
+                        <span class="badge badge-info">�v��</span>
+                        <small class="text-muted">��o���v�G0.1% - 1%</small>
+                    </div>
+                    <div class="mb-3">
+                        <span class="badge badge-warning">�ǻ�</span>
+                        <small class="text-muted">��o���v�G0.01% - 0.1%</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">�ֳt�]�w</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-secondary" onclick="setQuickSettings('���q', '��', 25)">
+                            <i class="fas fa-cat"></i> ���q�߫} (25%)
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="setQuickSettings('�}��', '��', 5)">
+                            <i class="fas fa-dog"></i> �}������ (5%)
+                        </button>
+                        <button type="button" class="btn btn-outline-info" onclick="setQuickSettings('�v��', '��', 0.5)">
+                            <i class="fas fa-dove"></i> �v�ֳ��� (0.5%)
+                        </button>
+                        <button type="button" class="btn btn-outline-warning" onclick="setQuickSettings('�ǻ�', '�s', 0.05)">
+                            <i class="fas fa-dragon"></i> �ǻ��s (0.05%)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        function setQuickSettings(rarity, type, rate) {
+            document.getElementById('raritySelect').value = rarity;
+            document.getElementById('PetType').value = type;
+            document.getElementById('DropRate').value = rate;
+        }
+
+        // �}�����ܧ�ɪ����v��ĳ
+        document.getElementById('raritySelect').addEventListener('change', function() {
+            const rarity = this.value;
+            const rateInput = document.getElementById('DropRate');
+            
+            switch(rarity) {
+                case '���q':
+                    rateInput.placeholder = '��ĳ���v�G10% - 50%';
+                    break;
+                case '�}��':
+                    rateInput.placeholder = '��ĳ���v�G1% - 10%';
+                    break;
+                case '�v��':
+                    rateInput.placeholder = '��ĳ���v�G0.1% - 1%';
+                    break;
+                case '�ǻ�':
+                    rateInput.placeholder = '��ĳ���v�G0.01% - 0.1%';
+                    break;
+                default:
+                    rateInput.placeholder = '�п�J��o���v';
+            }
+        });
+
+        // ���v����
+        document.getElementById('DropRate').addEventListener('input', function() {
+            const rate = parseFloat(this.value);
+            if (rate < 0.01) {
+                this.setCustomValidity('���v����p��0.01%');
+            } else if (rate > 100) {
+                this.setCustomValidity('���v����j��100%');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    </script>
+}
+

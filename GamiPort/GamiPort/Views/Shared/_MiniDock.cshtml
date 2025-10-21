@@ -1,0 +1,326 @@
+﻿@* =============================================================
+   _MiniDock.cshtml
+   功能：
+     1) 右下「主按鈕（FAB）」，點開展現三個動作鈕（Speed-Dial）。
+        - 動作 #1：好友對話 → 顯示/隱藏本面板（好友清單）
+        - 動作 #2/#3：預留（先 disabled）
+     2) 好友清單面板（預設隱藏）。每張卡片三按鈕，其中第一顆是「對話」，
+        會帶 data-chat-open="<UserId>"，交由 _FloatingDock 的單窗聊天處理。
+   資料來源：GET /social_hub/relations/friends（RelationsQueryController）
+   注意：
+     - 本檔「只列出清單與觸發聊天」，不維護聊天 state。
+   ============================================================= *@
+@{
+    // RelationsQueryController：讀好友清單（僅已互為好友，可改 onlyAccepted=false 觀察全部關聯）
+    var friendsApi = Url.Action("Friends", "RelationsQuery", new { area = "social_hub", onlyAccepted = true, take = 12 });
+}
+
+<style>
+    /* ---------- 面板（好友清單） ---------- */
+    .miniDock {
+        position: fixed;
+        right: 12px;
+        top: 140px;
+        width: 280px;
+        z-index: 1030;
+        display: none;
+    }
+
+        .miniDock.show {
+            display: block;
+        }
+
+        .miniDock .md-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: .5rem .5rem 0 0;
+        }
+
+        .miniDock .md-title {
+            font-weight: 600;
+        }
+
+        .miniDock .md-head .md-tools {
+            display: flex;
+            gap: 6px;
+        }
+
+        .miniDock .md-body {
+            border: 1px solid #e9ecef;
+            border-top: 0;
+            background: #fff;
+            border-radius: 0 0 .5rem .5rem;
+            max-height: 48vh;
+            overflow: auto;
+        }
+
+        .miniDock .md-card {
+            border-bottom: 1px solid #f1f3f5;
+            padding: 10px;
+        }
+
+            .miniDock .md-card:last-child {
+                border-bottom: 0;
+            }
+
+        .miniDock .md-name {
+            font-weight: 600;
+        }
+
+        .miniDock .md-id {
+            color: #6c757d;
+            font-size: .85rem;
+            margin-left: 4px;
+        }
+
+        .miniDock .md-actions {
+            margin-top: 6px;
+            display: flex;
+            gap: 6px;
+        }
+
+            .miniDock .md-actions button {
+                flex: 1;
+                border: 1px solid #dee2e6;
+                background: #fff;
+                border-radius: .375rem;
+                height: 32px;
+                cursor: pointer;
+            }
+
+                .miniDock .md-actions button[disabled] {
+                    opacity: .6;
+                    cursor: not-allowed;
+                }
+
+        .miniDock .md-badge {
+            display: inline-block;
+            min-width: 18px;
+            padding: 0 6px;
+            line-height: 18px;
+            font-size: .75rem;
+            color: #fff;
+            background: #dc3545;
+            border-radius: 999px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+    /* ---------- 右下 FAB（主按鈕 + 三顆動作）- 調整間距版 ---------- */
+    :root {
+        /* 想再大一點就把 16/14/76 這三個數值往上調 */
+        --fab-right: calc(env(safe-area-inset-right, 0px) + 16px); /* 距離螢幕右側 */
+        --fab-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); /* 距離螢幕下緣 */
+        --fab-gap: 14px; /* 小按鈕彼此間距 */
+        --fab-actions-bottom-offset: 76px; /* 小按鈕群與主按鈕的垂直距離 */
+    }
+
+    .gp-fab {
+        position: fixed;
+        right: var(--fab-right);
+        bottom: var(--fab-bottom);
+        z-index: 1076;
+    }
+
+        .gp-fab .fab-main {
+            width: 56px;
+            height: 56px;
+            border-radius: 999px;
+            border: 0;
+            background: #0d6efd;
+            color: #fff;
+            box-shadow: 0 10px 25px rgba(13,110,253,.35);
+            cursor: pointer;
+            font-size: 22px;
+        }
+
+        /* 小按鈕群：改成距離主按鈕更遠、間距更大 */
+        .gp-fab .fab-actions {
+            position: absolute;
+            right: 12px; /* 從主按鈕中心往右偏一點，避免重疊 */
+            bottom: var(--fab-actions-bottom-offset); /* 與主按鈕的空隙（原本 64，現在 76） */
+            display: flex;
+            flex-direction: column;
+            gap: var(--fab-gap);
+            pointer-events: none;
+        }
+
+        .gp-fab .fab-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 999px;
+            border: 0;
+            background: #fff;
+            color: #212529;
+            box-shadow: 0 8px 20px rgba(0,0,0,.18);
+            cursor: pointer;
+            font-size: 18px;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity .18s, transform .18s;
+        }
+
+        .gp-fab.open .fab-actions {
+            pointer-events: auto;
+        }
+
+        .gp-fab.open .fab-btn {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .gp-fab .fab-btn[disabled] {
+            opacity: .55;
+            cursor: not-allowed;
+        }
+
+        .gp-fab .fab-tip {
+            position: absolute;
+            right: 54px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #212529;
+            color: #fff;
+            font-size: .75rem;
+            padding: 4px 6px;
+            border-radius: .375rem;
+            white-space: nowrap;
+            display: none;
+        }
+
+        .gp-fab .fab-wrap {
+            position: relative;
+        }
+
+            .gp-fab .fab-wrap:hover .fab-tip {
+                display: block;
+            }
+
+    /* 手機窄螢幕：靠左一點，避免吃到瀏海安全區 */
+    @@media (max-width:420px) {
+        .gp-fab
+
+    {
+        right: calc(env(safe-area-inset-right, 0px) + 2vw);
+        bottom: var(--fab-bottom);
+    }
+
+    }
+</style>
+
+<!-- 好友清單面板（預設隱藏；由 FAB 的「好友對話」鈕切換顯示） -->
+<div id="MiniDock" class="miniDock" data-mini-dock>
+    <div class="md-head">
+        <div class="md-title">好友清單</div>
+        <div class="md-tools">
+            <button type="button" title="重新整理" id="btnReload">↻</button>
+            <button type="button" title="關閉" id="btnClose">×</button>
+        </div>
+    </div>
+    <div class="md-body" id="mdList">
+        <div style="padding:10px;color:#6c757d;">載入中…</div>
+    </div>
+</div>
+
+<!-- 右下 FAB：主按鈕 + 三顆動作鈕（#1 好友對話、#2/#3 保留） -->
+<div class="gp-fab" id="gpFab">
+    <button class="fab-main" id="fabMain" aria-expanded="false" title="快速動作">＋</button>
+    <div class="fab-actions" aria-hidden="true">
+        <div class="fab-wrap">
+            <button class="fab-btn" id="fabFriend" title="好友對話">💬</button>
+            <div class="fab-tip">好友對話</div>
+        </div>
+        <div class="fab-wrap">
+            <button class="fab-btn" id="fabReserve1" disabled title="保留">⭐</button>
+            <div class="fab-tip">保留</div>
+        </div>
+        <div class="fab-wrap">
+            <button class="fab-btn" id="fabReserve2" disabled title="保留">🕘</button>
+            <div class="fab-tip">保留</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (() => {
+      // ---------------------- 好友清單載入 ----------------------
+      const API = "@friendsApi";
+      const listEl = document.getElementById('mdList');
+      const btnReload = document.getElementById('btnReload');
+      const btnClose  = document.getElementById('btnClose');
+      const panel     = document.getElementById('MiniDock');
+
+      async function loadFriends(){
+        listEl.innerHTML = `<div style="padding:10px;color:#6c757d;">載入中…</div>`;
+        try{
+          const r = await fetch(API);
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          const arr = await r.json();
+
+          if (!Array.isArray(arr) || arr.length === 0){
+            listEl.innerHTML = `<div style="padding:10px;color:#6c757d;">目前沒有好友資料。</div>`;
+            return;
+          }
+
+          listEl.innerHTML = "";
+          for (const x of arr){
+            const id   = x.friendUserId;
+            const name = x.displayName ?? ("User #" + id);
+            const card = document.createElement('div');
+            card.className = "md-card";
+            card.innerHTML = `
+              <div>
+                <span class="md-name">${name}</span>
+                <span class="md-id">#${id}</span>
+                <!-- 之後可在這裡放未讀徽章：<span class="md-badge" data-chat-badge="${id}">3</span> -->
+              </div>
+              <div class="md-actions">
+                <button data-chat-open="${id}" title="與 ${name} 對話">💬 對話</button>
+                <button disabled title="保留">🕘 保留</button>
+                <button disabled title="保留">⭐ 保留</button>
+              </div>`;
+            listEl.appendChild(card);
+          }
+        }catch(e){
+          listEl.innerHTML = `<div style="padding:10px;color:#dc3545;">載入失敗：${e.message || e}</div>`;
+          console.error(e);
+        }
+      }
+
+      btnReload?.addEventListener('click', loadFriends);
+      btnClose ?.addEventListener('click', () => panel.classList.remove('show'));
+
+      // ---------------------- 右下 FAB 動作 ----------------------
+      const fab     = document.getElementById('gpFab');
+      const fabMain = document.getElementById('fabMain');
+      const fabFriend = document.getElementById('fabFriend');
+
+      function toggleFab(open){
+        fab.classList.toggle('open', open);
+        fabMain.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+
+      fabMain.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleFab(!fab.classList.contains('open'));
+      });
+
+      // 點外面收起
+      document.addEventListener('click', () => toggleFab(false));
+
+      // 動作 #1：好友對話 → 顯示/隱藏面板；初次打開時載入清單
+      fabFriend.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isShow = panel.classList.toggle('show');
+        if (isShow && (!listEl.dataset.loaded || listEl.dataset.loaded === "0")){
+          loadFriends().then(()=> { listEl.dataset.loaded = "1"; });
+        }
+      });
+
+      // 初始化：不自動載入，等使用者點「好友對話」再載
+    })();
+</script>

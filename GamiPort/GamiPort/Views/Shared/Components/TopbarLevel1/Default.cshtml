@@ -1,0 +1,57 @@
+﻿@model GamiPort.Models.ViewModels.TopbarVM
+
+<header class="topbar1 navbar navbar-expand-lg navbar-light bg-light border-bottom sticky-top">
+    <div class="container-fluid">
+        <button class="navbar-toggler d-lg-none me-2" type="button"
+                data-bs-toggle="offcanvas" data-bs-target="#mainOffcanvas"
+                aria-controls="mainOffcanvas" aria-label="Open menu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <a class="navbar-brand fw-semibold d-flex align-items-center gap-2" href="~/">
+            <img src="~/picture/Gamiport.png" alt="Logo" height="24" />
+            GamiPort
+        </a>
+
+        <ul class="navbar-nav ms-auto align-items-lg-center">
+            <li class="nav-item d-none d-md-block"><a class="nav-link" href="#">連結 A</a></li>
+            <li class="nav-item d-none d-md-block"><a class="nav-link" href="#">連結 B</a></li>
+
+            @if (Model.IsAuthenticated)
+            {
+                <li class="nav-item dropdown ms-2">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle me-1"></i>
+                        <span>@(Model.NickName ?? "使用者")</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                        <li>
+                            <form asp-area="Login" asp-controller="Login" asp-action="Logout" method="post" class="px-3 py-2">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-danger w-100">登出</button>
+                            </form>
+
+                        </li>
+                    </ul>
+                </li>
+            }
+            else
+            {
+                <li class="nav-item ms-2">
+                    <a class="btn btn-primary" asp-area="Login" asp-controller="Login" asp-action="Login">登入</a>
+                </li>
+            }
+        </ul>
+    </div>
+</header>
+
+<div class="offcanvas offcanvas-start offcanvas-main" tabindex="-1" id="mainOffcanvas" aria-labelledby="mainOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h6 class="offcanvas-title" id="mainOffcanvasLabel">主選單</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+        @await Html.PartialAsync("_Sidebar")
+    </div>
+</div>
+
