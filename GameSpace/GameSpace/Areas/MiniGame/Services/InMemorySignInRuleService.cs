@@ -35,7 +35,7 @@ namespace GameSpace.Areas.MiniGame.Services
         public async Task<List<SignInRuleDisplay>> GetAllRulesAsync()
         {
             var rules = await _context.Set<SignInRule>()
-                .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
+                .FromSqlRaw("SELECT Id, SignInDay, Points, Experience, HasCoupon, CouponTypeCode, IsActive, CreatedAt, UpdatedAt, Description, IsDeleted, DeletedAt, DeletedBy, DeleteReason FROM SignInRule WHERE IsDeleted = 0")
                 .AsNoTracking()
                 .OrderBy(r => r.SignInDay)
                 .ToListAsync();
@@ -59,7 +59,7 @@ namespace GameSpace.Areas.MiniGame.Services
         public async Task<SignInRuleDisplay?> GetRuleByIdAsync(int id)
         {
             var rule = await _context.Set<SignInRule>()
-                .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
+                .FromSqlRaw("SELECT Id, SignInDay, Points, Experience, HasCoupon, CouponTypeCode, IsActive, CreatedAt, UpdatedAt, Description, IsDeleted, DeletedAt, DeletedBy, DeleteReason FROM SignInRule WHERE IsDeleted = 0")
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.Id == id);
 
@@ -85,7 +85,7 @@ namespace GameSpace.Areas.MiniGame.Services
         public async Task<bool> UpdateRuleAsync(int id, int points, int experience, bool hasCoupon, string? couponTypeCode, bool isActive, string? description)
         {
             var rule = await _context.Set<SignInRule>()
-                .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
+                .FromSqlRaw("SELECT Id, SignInDay, Points, Experience, HasCoupon, CouponTypeCode, IsActive, CreatedAt, UpdatedAt, Description, IsDeleted, DeletedAt, DeletedBy, DeleteReason FROM SignInRule WHERE IsDeleted = 0")
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (rule == null)
@@ -110,7 +110,7 @@ namespace GameSpace.Areas.MiniGame.Services
         {
             // 檢查是否已有相同天數的規則
             var exists = await _context.Set<SignInRule>()
-                .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
+                .FromSqlRaw("SELECT Id, SignInDay, Points, Experience, HasCoupon, CouponTypeCode, IsActive, CreatedAt, UpdatedAt, Description, IsDeleted, DeletedAt, DeletedBy, DeleteReason FROM SignInRule WHERE IsDeleted = 0")
                 .AnyAsync(r => r.SignInDay == signInDay);
 
             if (exists)
@@ -139,7 +139,7 @@ namespace GameSpace.Areas.MiniGame.Services
         public async Task<bool> DeleteRuleAsync(int id)
         {
             var rule = await _context.Set<SignInRule>()
-                .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
+                .FromSqlRaw("SELECT Id, SignInDay, Points, Experience, HasCoupon, CouponTypeCode, IsActive, CreatedAt, UpdatedAt, Description, IsDeleted, DeletedAt, DeletedBy, DeleteReason FROM SignInRule WHERE IsDeleted = 0")
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (rule == null)
@@ -157,7 +157,7 @@ namespace GameSpace.Areas.MiniGame.Services
         {
             // 清空現有規則
             var existingRules = await _context.Set<SignInRule>()
-                .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
+                .FromSqlRaw("SELECT Id, SignInDay, Points, Experience, HasCoupon, CouponTypeCode, IsActive, CreatedAt, UpdatedAt, Description, IsDeleted, DeletedAt, DeletedBy, DeleteReason FROM SignInRule WHERE IsDeleted = 0")
                 .ToListAsync();
             _context.Set<SignInRule>().RemoveRange(existingRules);
 

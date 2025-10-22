@@ -55,8 +55,6 @@ public partial class Pet
 
     public int? ExperienceToNextLevel { get; set; }
 
-    public int? TotalPointsGainedLevelUp { get; set; }
-
     public virtual ICollection<MiniGame> MiniGames { get; set; } = new List<MiniGame>();
 
     public virtual User User { get; set; } = null!;

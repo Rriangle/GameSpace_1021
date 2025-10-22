@@ -15,6 +15,7 @@ namespace GameSpace.Areas.MiniGame.Services
         private readonly ILogger<SignInQueryService> _logger;
         private static readonly TimeZoneInfo TaipeiTimeZone =
             TimeZoneInfo.FindSystemTimeZoneById("Taipei Standard Time");
+        private const string SignInRuleSelectSql = "SELECT Id, SignInDay, Points, Experience, HasCoupon, CouponTypeCode, IsActive, CreatedAt, UpdatedAt, Description, IsDeleted, DeletedAt, DeletedBy, DeleteReason FROM SignInRule WHERE IsDeleted = 0";
 
         public SignInQueryService(GameSpacedatabaseContext context, ILogger<SignInQueryService> logger)
         {
@@ -45,7 +46,7 @@ namespace GameSpace.Areas.MiniGame.Services
                 pageSize = Math.Clamp(pageSize, 10, 100);
 
                 var query = _context.Set<SignInRule>()
-                    .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
+                    .FromSqlRaw(SignInRuleSelectSql)
                     .AsNoTracking()
                     .OrderBy(r => r.SignInDay);
 
@@ -99,7 +100,7 @@ namespace GameSpace.Areas.MiniGame.Services
             try
             {
                 var rule = await _context.Set<SignInRule>()
-                    .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
+                    .FromSqlRaw(SignInRuleSelectSql)
                     .AsNoTracking()
                     .FirstOrDefaultAsync(r => r.Id == id);
 
@@ -382,7 +383,7 @@ namespace GameSpace.Areas.MiniGame.Services
             try
             {
                 var rules = await _context.Set<SignInRule>()
-                    .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
+                    .FromSqlRaw(SignInRuleSelectSql)
                     .AsNoTracking()
                     .Where(r => r.IsActive)
                     .OrderBy(r => r.SignInDay)
