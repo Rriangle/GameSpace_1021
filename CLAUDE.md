@@ -14,33 +14,35 @@ Both projects share a common architecture using ASP.NET Core 8.0 with Areas-base
 
 ### Build and Run
 ```powershell
-# Build GameSpace
-cd GameSpace
-dotnet build GameSpace.sln
+# Build GameSpace (from repository root)
+cd GameSpace\GameSpace
+dotnet build GameSpace.csproj
 
 # Run GameSpace
-cd GameSpace
 dotnet run --project GameSpace.csproj
 
-# Build GamiPort
-cd GamiPort
-dotnet build GamiPort.sln
+# Build GamiPort (from repository root)
+cd GamiPort\GamiPort
+dotnet build GamiPort.csproj
 
 # Run GamiPort
-cd GamiPort
 dotnet run --project GamiPort.csproj
 ```
+
+**Note**: The .sln files exist but the actual project structure requires building the .csproj files directly.
 
 ### Database Operations
 **CRITICAL**: Do NOT use EF Migrations to modify schema. The database structure is managed manually via SQL Server.
 
 ```powershell
-# Test database connection (from schema/ directory)
+# Test database connection
 sqlcmd -S tcp:DESKTOP-8HQIS1S\SQLEXPRESS,1433 -d GameSpacedatabase -E -Q "SELECT DB_NAME() AS CurrentDatabase"
 
-# Export all database tables
+# Export all database tables (run from schema/ directory)
 sqlcmd -S tcp:DESKTOP-8HQIS1S\SQLEXPRESS,1433 -d GameSpacedatabase -E -Q "SET NOCOUNT ON;EXEC sp_MSforeachtable 'SELECT ''?'' AS TableName, * FROM ?'" -o "GameSpacedatabase_all_tables.txt"
 ```
+
+**Important**: The actual SQL Server instance name is `DESKTOP-8HQIS1S\SQLEXPRESS` (using TCP port 1433). Connection strings in `appsettings.json` use `(local)\SQLEXPRESS01` as an alias.
 
 ## Architecture
 
@@ -81,15 +83,17 @@ Both projects use ASP.NET Areas for modular organization:
 
 ### Area Registration Patterns
 
-**Simple Areas** (Forum, MemberManagement):
+**Simple Areas** (Forum, MemberManagement, OnlineStore):
 - No special registration needed
 - Controllers only need `[Area("AreaName")]` attribute
 - Inject shared `GameSpacedatabaseContext` via constructor
 
-**Complex Areas** (MiniGame, social_hub):
-- Use `ServiceExtensions.cs` pattern for centralized DI registration
-- Register in `Program.cs` with extension method
-- Example: `builder.Services.AddMiniGameServices(builder.Configuration);`
+**Complex Areas**:
+- **MiniGame**: Uses `ServiceExtensions.cs` in `Areas/MiniGame/config/` for centralized service registration
+  - Register with: `builder.Services.AddMiniGameServices(builder.Configuration);`
+- **social_hub**: Services registered directly in `Program.cs` (lines 66-94)
+  - Includes SignalR, memory cache, mute filter, notifications, permissions
+  - Hub mapping: `app.MapHub<ChatHub>("/social_hub/chatHub")` (line 232-238)
 
 ## MiniGame Area - Special Focus
 
@@ -162,17 +166,23 @@ public static class ServiceExtensions
 
         services.AddScoped<IMiniGameAdminService, MiniGameAdminService>();
         services.AddScoped<IUserWalletService, UserWalletService>();
-        // ... 30+ service registrations
+        // ... 30+ service registrations (see ServiceExtensions.cs:11-156)
 
         return services;
     }
 }
 ```
 
-Registered in `Program.cs` with:
+**To register in `Program.cs`**, add after DbContext registration:
 ```csharp
+// Add this using statement at top
+using GameSpace.Areas.MiniGame.config;
+
+// Add this line after DbContext configuration (around line 44)
 builder.Services.AddMiniGameServices(builder.Configuration);
 ```
+
+**Current Status**: As of this writing, the MiniGame services extension method exists but is NOT yet called in Program.cs. You will need to add this registration line manually.
 
 ### Permission Control
 
@@ -202,14 +212,27 @@ Controllers use: `[Authorize(AuthenticationSchemes = "AdminCookie", Policy = "Ad
 
 ### Connection Strings
 Located in `appsettings.json`:
+
+**GameSpace**:
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=aspnet-GameSpace-...",
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=aspnet-GameSpace-38e0b594-8684-40b2-b330-7fb94b733c73;Trusted_Connection=True;MultipleActiveResultSets=true",
+    "GameSpace": "Data Source=(local)\\SQLEXPRESS01;Initial Catalog=GameSpacedatabase;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True"
+  }
+}
+```
+
+**GamiPort**:
+```json
+{
+  "ConnectionStrings": {
     "GameSpace": "Data Source=(local)\\SQLEXPRESS01;Initial Catalog=GameSpacedatabase;..."
   }
 }
 ```
+
+**Note**: GamiPort uses the same `GameSpace` connection string for both DbContexts (ApplicationDbContext and GameSpacedatabaseContext point to the same database).
 
 ## Development Workflow
 
@@ -303,11 +326,60 @@ Comprehensive documentation is available in the `schema/` directory:
 - `SQL_Server_連線操作完整手冊_AI適用.md` - SQL Server connection guide
 - `MiniGame_Area_資料庫完整結構文件_2025-10-21.md` - Database structure documentation
 
+## Project-Specific Differences
+
+### GamiPort vs GameSpace
+
+**Authentication**:
+- **GameSpace**: Uses `AdminCookie` scheme for admin authentication + ASP.NET Identity
+- **GamiPort**: Uses `DevCookieLoginIdentity` for development (reads from cookie `gp_dev_uid` or appsettings) + ASP.NET Identity with cookie name `GamiPort.User`
+
+**Development Features** (GamiPort only):
+```csharp
+// GamiPort Program.cs includes dev middleware
+app.UseDevQueryLoginParameter();  // Allows ?asUser=30000001 in URL to set user
+```
+
+**DbContext Configuration**:
+- **GameSpace**: Two separate connection strings (DefaultConnection for Identity, GameSpace for business)
+- **GamiPort**: Single connection string (GameSpace) used for both DbContexts
+
+## Known Issues
+
+### Build Errors
+The GameSpace project currently has namespace ambiguity errors in the MiniGame Area:
+- `PetBackgroundCostSetting` exists in both `GameSpace.Models` and `GameSpace.Areas.MiniGame.Models`
+- `PetSkinColorCostSetting` exists in both `GameSpace.Models` and `GameSpace.Areas.MiniGame.Models`
+
+**Resolution**: Use fully qualified type names (e.g., `GameSpace.Models.PetBackgroundCostSetting`) or remove duplicate model definitions.
+
+## Troubleshooting
+
+### Database Connection Issues
+If you cannot connect to SQL Server:
+1. Verify SQL Server is running: Check "SQL Server (SQLEXPRESS)" service in Windows Services
+2. Enable TCP/IP: Use SQL Server Configuration Manager to enable TCP/IP protocol
+3. Check port 1433: Ensure port 1433 is open and SQL Server is listening
+4. Test connection: Use the `sqlcmd` command in "Database Operations" section above
+
+### MiniGame Services Not Available
+If MiniGame controllers throw DI errors:
+1. Verify `builder.Services.AddMiniGameServices(builder.Configuration);` is in `Program.cs`
+2. Add the using statement: `using GameSpace.Areas.MiniGame.config;`
+3. Ensure it's placed after DbContext registration but before `var app = builder.Build();`
+
+### GamiPort Development Login
+To simulate logged-in user in GamiPort development:
+1. Add query parameter: `?asUser=30000001` to any URL
+2. Or set cookie manually: `gp_dev_uid=30000001`
+3. Check `appsettings.Development.json` for default DevLogin UserId
+
 ## Special Notes
 
 1. **Language**: User interface uses Traditional Chinese (zh-TW), but code identifiers, file names, and SQL/CLI keywords must remain in English
 2. **File Limits**: Keep commits small - max 3 files or 400 lines per batch
 3. **UI Frameworks**:
-   - Admin backend uses SB Admin template (do not modify vendor files)
-   - Public frontend uses Bootstrap-based design (reference `index.txt`)
+   - Admin backend (GameSpace) uses SB Admin template (do not modify vendor files in `wwwroot/lib/sb-admin/`)
+   - Public frontend (GamiPort) uses Bootstrap-based design (reference `schema/index.txt`)
 4. **No Generic Documentation**: Do not create generic dev guides, best practices docs, or TODO files unless explicitly required
+5. **Encoding**: Code files should use UTF-8 without BOM; documentation files (`.md`, `.txt`) should use UTF-8 with BOM

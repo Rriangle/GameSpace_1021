@@ -1,6 +1,7 @@
 ﻿using GameSpace.Areas.MiniGame.Models.ViewModels;
 using GameSpace.Areas.MiniGame.Services;
 using GameSpace.Areas.social_hub.Auth;
+using GameSpace.Areas.MiniGame.Models;
 using GameSpace.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -111,7 +112,7 @@ namespace GameSpace.Areas.MiniGame.Controllers
                     return View(model);
                 }
 
-                _logger.LogInformation("成功建立寵物升級獎勵設定 ID: {Id}", result.Id);
+                _logger.LogInformation("成功建立寵物升級獎勵設定 ID: {Id}", result.SettingId);
                 TempData["SuccessMessage"] = "寵物升級獎勵設定建立成功";
                 return RedirectToAction(nameof(Index));
             }
@@ -137,12 +138,13 @@ namespace GameSpace.Areas.MiniGame.Controllers
 
                 var editModel = new PetLevelRewardSettingEditViewModel
                 {
-                    Id = setting.Id,
-                    Level = setting.Level,
-                    RewardType = setting.RewardType,
-                    RewardAmount = setting.RewardAmount,
+                    SettingId = setting.SettingId,
+                    LevelRangeStart = setting.LevelRangeStart,
+                    LevelRangeEnd = setting.LevelRangeEnd,
+                    PointsReward = setting.PointsReward,
                     Description = setting.Description,
-                    IsEnabled = setting.IsEnabled
+                    IsActive = setting.IsActive,
+                    DisplayOrder = setting.DisplayOrder
                 };
 
                 _logger.LogInformation("顯示編輯寵物升級獎勵設定表單 ID: {Id}", id);
@@ -163,9 +165,9 @@ namespace GameSpace.Areas.MiniGame.Controllers
         {
             try
             {
-                if (id != model.Id)
+                if (id != model.SettingId)
                 {
-                    _logger.LogWarning("編輯寵物升級獎勵設定 ID 不匹配: {Id} != {ModelId}", id, model.Id);
+                    _logger.LogWarning("編輯寵物升級獎勵設定 ID 不匹配: {Id} != {ModelId}", id, model.SettingId);
                     return NotFound();
                 }
 
@@ -286,22 +288,6 @@ namespace GameSpace.Areas.MiniGame.Controllers
             }
         }
 
-        // GET: MiniGame/PetLevelRewardSetting/GetRewardTypes
-        [HttpGet]
-        public async Task<IActionResult> GetRewardTypes()
-        {
-            try
-            {
-                var rewardTypes = await _service.GetRewardTypesAsync();
-                _logger.LogInformation("取得所有獎勵類型");
-                return Json(rewardTypes);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "取得獎勵類型時發生錯誤");
-                return Json(new { error = "取得獎勵類型時發生錯誤" });
-            }
-        }
     }
 }
 

@@ -1,4 +1,5 @@
 ﻿using GameSpace.Areas.MiniGame.Models.ViewModels;
+using GameSpace.Models;
 
 namespace GameSpace.Areas.MiniGame.Services
 {
@@ -28,7 +29,7 @@ namespace GameSpace.Areas.MiniGame.Services
         /// <summary>
         /// ???蝯梯?鞈?
         /// </summary>
-        Task<GameStatisticsViewModel> GetGameStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null);
+        Task<Models.ViewModels.GameStatisticsViewModel> GetGameStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null);
 
         /// <summary>
         /// ??雿輻???仿??脫活??

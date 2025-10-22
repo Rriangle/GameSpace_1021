@@ -1,4 +1,5 @@
 ﻿using GameSpace.Areas.MiniGame.Models.ViewModels;
+using GameSpace.Areas.MiniGame.Models;
 using GameSpace.Models;
 using GameSpace.Infrastructure.Time;
 using Microsoft.EntityFrameworkCore;
@@ -256,7 +257,7 @@ namespace GameSpace.Areas.MiniGame.Services
         /// <summary>
         /// 取得遊戲統計數據
         /// </summary>
-        public async Task<GameStatisticsViewModel> GetGameStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<Models.ViewModels.GameStatisticsViewModel> GetGameStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null)
         {
             var query = _context.MiniGames.AsNoTracking().AsQueryable();
 
@@ -296,7 +297,7 @@ namespace GameSpace.Areas.MiniGame.Services
                 .OrderBy(s => s.Level)
                 .ToListAsync();
 
-            return new GameStatisticsViewModel
+            return new Models.ViewModels.GameStatisticsViewModel
             {
                 TotalGames = totalGames,
                 WinGames = winGames,

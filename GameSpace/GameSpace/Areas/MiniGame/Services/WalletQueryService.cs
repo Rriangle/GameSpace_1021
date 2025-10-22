@@ -1,4 +1,5 @@
 using GameSpace.Areas.MiniGame.Models.ViewModels;
+using GameSpace.Areas.MiniGame.Models;
 using GameSpace.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -196,7 +197,7 @@ namespace GameSpace.Areas.MiniGame.Services
         /// <summary>
         /// 查詢電子票券
         /// </summary>
-        public async Task<PagedResult<EVoucherReadModel>> QueryUserEVouchersAsync(EVoucherQueryModel query)
+        public async Task<PagedResult<Models.ViewModels.EVoucherReadModel>> QueryUserEVouchersAsync(EVoucherQueryModel query)
         {
             try
             {
@@ -255,7 +256,7 @@ namespace GameSpace.Areas.MiniGame.Services
                 var totalCount = await source.CountAsync();
                 var items = await source.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
-                var records = items.Select(e => new EVoucherReadModel
+                var records = items.Select(e => new Models.ViewModels.EVoucherReadModel
                 {
                     EVoucherId = e.EvoucherId,
                     EVoucherCode = e.EvoucherCode,
@@ -276,7 +277,7 @@ namespace GameSpace.Areas.MiniGame.Services
 
                 _logger.LogInformation("查詢電子票券成功: 頁碼={PageNumber}, 總數={TotalCount}", page, totalCount);
 
-                return new PagedResult<EVoucherReadModel>
+                return new PagedResult<Models.ViewModels.EVoucherReadModel>
                 {
                     Items = records,
                     TotalCount = totalCount,

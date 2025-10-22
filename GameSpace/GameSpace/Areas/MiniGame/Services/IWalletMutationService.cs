@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using GameSpace.Models;
 
 namespace GameSpace.Areas.MiniGame.Services
 {

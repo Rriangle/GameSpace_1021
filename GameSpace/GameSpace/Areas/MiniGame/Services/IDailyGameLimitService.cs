@@ -1,4 +1,4 @@
-﻿using GameSpace.Areas.MiniGame.Models;
+﻿using GameSpace.Models;
 using GameSpace.Areas.MiniGame.Models.ViewModels;
 
 namespace GameSpace.Areas.MiniGame.Services
@@ -20,13 +20,13 @@ namespace GameSpace.Areas.MiniGame.Services
         /// </summary>
         /// <param name="id">設定ID</param>
         /// <returns>每日遊戲次數限制設定</returns>
-        Task<DailyGameLimit?> GetByIdAsync(int id);
+        Task<Models.DailyGameLimit?> GetByIdAsync(int id);
 
         /// <summary>
         /// 取得目前的每日遊戲次數限制設定
         /// </summary>
         /// <returns>每日遊戲次數限制設定</returns>
-        Task<DailyGameLimit?> GetCurrentSettingAsync();
+        Task<Models.DailyGameLimit?> GetCurrentSettingAsync();
 
         /// <summary>
         /// 建立每日遊戲次數限制設定

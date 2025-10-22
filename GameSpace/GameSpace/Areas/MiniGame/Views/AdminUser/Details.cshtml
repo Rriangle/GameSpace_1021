@@ -146,57 +146,39 @@
                     <h6 class="m-0 font-weight-bold text-primary">簽到記錄</h6>
                 </div>
                 <div class="card-body">
-                    @* TODO: Uncomment when SignInRecord entity is created
-                    @if (Model.SignIns != null && Model.SignIns.Any())
+                    @{
+                        var signInRecords = ViewBag.SignInRecords as List<GameSpace.Models.UserSignInStat>;
+                    }
+                    @if (signInRecords != null && signInRecords.Any())
                     {
                         <div class="table-responsive">
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
                                         <th>簽到日期</th>
-                                        <th>連續天數</th>
                                         <th>獲得點數</th>
+                                        <th>獲得經驗</th>
+                                        <th>優惠券</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var signIn in Model.SignIns.Take(10))
+                                    @foreach (var signIn in signInRecords)
                                     {
                                         <tr>
                                             <td>@signIn.SignTime.ToString("yyyy-MM-dd HH:mm")</td>
-                                            <td>@signIn.PointsGained</td>
                                             <td>@signIn.PointsGained.ToString("N0")</td>
+                                            <td>@signIn.ExpGained.ToString("N0")</td>
+                                            <td>@(!string.IsNullOrEmpty(signIn.CouponGained) ? signIn.CouponGained : "-")</td>
                                         </tr>
                                     }
                                 </tbody>
                             </table>
                         </div>
-                        @if (Model.SignIns.Count > 10)
-                        {
-                            <p class="text-muted text-center">顯示最近10筆記錄，共 @Model.SignIns.Count 筆</p>
-                        }
+                        <p class="text-muted text-center">顯示最近 @signInRecords.Count 筆記錄</p>
                     }
                     else
-                    *@
                     {
                         <p class="text-muted">尚無簽到記錄</p>
-                    }
-                </div>
-            </div>
-
-            <!-- 遊戲記錄 -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">遊戲記錄</h6>
-                </div>
-                <div class="card-body">
-                    @* TODO: Uncomment when GamePlayRecord entity is created
-                    @if (Model.GamePlayRecords != null && Model.GamePlayRecords.Any())
-                    {
-                        }
-                    }
-                    else
-                    {
-                        <p class="text-muted">暫無簽到記錄</p>
                     }
                 </div>
             </div>
@@ -242,39 +224,45 @@
                     <h6 class="m-0 font-weight-bold text-primary">遊戲記錄</h6>
                 </div>
                 <div class="card-body">
-                    @* TODO: Uncomment when GamePlayRecord entity is created
-                    @if (Model.GamePlayRecords != null && Model.GamePlayRecords.Any())
+                    @{
+                        var gameRecords = ViewBag.GameRecords as List<GameSpace.Models.MiniGame>;
+                    }
+                    @if (gameRecords != null && gameRecords.Any())
                     {
                         <div class="table-responsive">
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
-                                        <th>遊戲名稱</th>
                                         <th>遊玩時間</th>
-                                        <th>得分</th>
+                                        <th>關卡</th>
+                                        <th>結果</th>
+                                        <th>怪物數</th>
                                         <th>獲得點數</th>
+                                        <th>獲得經驗</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var record in Model.GamePlayRecords.Take(10))
+                                    @foreach (var record in gameRecords)
                                     {
                                         <tr>
-                                            <td>@record.GameName</td>
-                                            <td>@record.PlayedAt.ToString("yyyy-MM-dd HH:mm")</td>
-                                            <td>@record.Score.ToString("N0")</td>
-                                            <td>@record.PointsEarned.ToString("N0")</td>
+                                            <td>@record.StartTime.ToString("yyyy-MM-dd HH:mm")</td>
+                                            <td>第 @record.Level 關</td>
+                                            <td>
+                                                <span class="badge badge-@(record.Result == "勝利" ? "success" : "danger")">
+                                                    @record.Result
+                                                </span>
+                                            </td>
+                                            <td>@record.MonsterCount</td>
+                                            <td>@record.PointsGained.ToString("N0")</td>
+                                            <td>@record.ExpGained.ToString("N0")</td>
                                         </tr>
                                     }
                                 </tbody>
                             </table>
                         </div>
-                        @if (Model.GamePlayRecords.Count > 10)
-                        {
-                            <p class="text-muted text-center">顯示最近10筆記錄，共 @Model.GamePlayRecords.Count 筆</p>
-                        }
+                        <p class="text-muted text-center">顯示最近 @gameRecords.Count 筆記錄</p>
                     }
                     else
-                    *@
                     {
                         <p class="text-muted">尚無遊戲記錄</p>
                     }

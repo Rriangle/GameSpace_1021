@@ -1,8 +1,9 @@
 ﻿using GameSpace.Areas.MiniGame.Services;
+using GameSpace.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
-using GameSpace.Models;
+using GameSpace.Areas.MiniGame.Models;
 using System.Security.Claims;
 
 namespace GameSpace.Areas.MiniGame.Filters

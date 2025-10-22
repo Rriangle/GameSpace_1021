@@ -1,7 +1,7 @@
-﻿using GameSpace.Areas.MiniGame.Models;
+﻿using GameSpace.Models;
 using GameSpace.Areas.MiniGame.Models.Settings;
 using GameSpace.Areas.MiniGame.Models.ViewModels;
-using GameSpace.Models;
+using GameSpace.Areas.MiniGame.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace GameSpace.Areas.MiniGame.Services

@@ -1,4 +1,4 @@
-﻿@model IEnumerable<GameSpace.Areas.MiniGame.Models.PetBackgroundCostSetting>
+﻿@model IEnumerable<GameSpace.Models.PetBackgroundCostSetting>
 
 @{
     ViewData["Title"] = "寵物換背景成本設定";
@@ -60,7 +60,7 @@
                                         @item.BackgroundCode
                                     </span>
                                 </td>
-                                <td>@item.RequiredPoints</td>
+                                <td>@item.PointsCost</td>
                                 <td>
                                     @if (item.IsActive)
                                     {
@@ -74,16 +74,16 @@
                                 <td>@item.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">
+                                        <a asp-action="Details" asp-route-id="@item.SettingId" class="btn btn-info btn-sm">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">
+                                        <a asp-action="Edit" asp-route-id="@item.SettingId" class="btn btn-warning btn-sm">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">
+                                        <a asp-action="Delete" asp-route-id="@item.SettingId" class="btn btn-danger btn-sm">
                                             <i class="fas fa-trash"></i>
                                         </a>
-                                        <form asp-action="ToggleActive" asp-route-id="@item.Id" method="post" class="d-inline">
+                                        <form asp-action="ToggleActive" asp-route-id="@item.SettingId" method="post" class="d-inline">
                                             <button type="submit" class="btn btn-@(item.IsActive ? "secondary" : "success") btn-sm">
                                                 <i class="fas fa-@(item.IsActive ? "pause" : "play")"></i>
                                             </button>

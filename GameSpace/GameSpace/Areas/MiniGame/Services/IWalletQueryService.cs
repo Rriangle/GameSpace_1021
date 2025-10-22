@@ -1,4 +1,5 @@
 ﻿using GameSpace.Areas.MiniGame.Models.ViewModels;
+using GameSpace.Models;
 
 namespace GameSpace.Areas.MiniGame.Services
 {
@@ -20,7 +21,7 @@ namespace GameSpace.Areas.MiniGame.Services
         /// <summary>
         /// ?亥岷??餃?蝳桀
         /// </summary>
-        Task<PagedResult<EVoucherReadModel>> QueryUserEVouchersAsync(EVoucherQueryModel query);
+        Task<PagedResult<Models.ViewModels.EVoucherReadModel>> QueryUserEVouchersAsync(EVoucherQueryModel query);
 
         /// <summary>
         /// ?亥岷?Ｗ?鈭斗?甇瑕

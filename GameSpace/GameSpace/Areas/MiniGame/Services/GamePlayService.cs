@@ -1,4 +1,5 @@
 using GameSpace.Infrastructure.Time;
+using GameSpace.Areas.MiniGame.Models;
 using GameSpace.Models;
 using Microsoft.EntityFrameworkCore;
 

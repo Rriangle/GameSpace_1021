@@ -1,4 +1,4 @@
-﻿using GameSpace.Areas.MiniGame.Models;
+using GameSpace.Models;
 using GameSpace.Areas.MiniGame.Models.ViewModels;
 
 namespace GameSpace.Areas.MiniGame.Services
@@ -14,8 +14,7 @@ namespace GameSpace.Areas.MiniGame.Services
         Task<IEnumerable<PetLevelRewardSettingListViewModel>> SearchAsync(PetLevelRewardSettingSearchViewModel searchModel);
         Task<(int TotalCount, int TotalPages)> GetPaginationInfoAsync(PetLevelRewardSettingSearchViewModel searchModel);
         Task<Dictionary<string, object>> GetStatisticsAsync();
-        Task<bool> ValidateLevelAsync(int level, int? excludeId = null);
-        Task<IEnumerable<string>> GetRewardTypesAsync();
+        Task<bool> ValidateLevelRangeAsync(int start, int end, int? excludeId = null);
+        Task<int> GetRewardPointsForLevelAsync(int level);
     }
 }
-

@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using GameSpace.Areas.MiniGame.Models;
+using Microsoft.EntityFrameworkCore;
 using GameSpace.Areas.MiniGame.Models.ViewModels;
 using GameSpace.Areas.MiniGame.Services;
+using GameSpace.Areas.MiniGame.Models;
 using GameSpace.Models;
 using GameSpace.Areas.social_hub.Auth;
 using System.Security.Cryptography;
@@ -109,6 +110,22 @@ namespace GameSpace.Areas.MiniGame.Controllers
             // 取得額外資訊
             var summary = await _walletService.GetPointsSummaryAsync(id.Value);
             ViewBag.WalletSummary = summary;
+
+            // 取得簽到記錄 (最近20筆)
+            var signInRecords = await _context.UserSignInStats
+                .Where(s => s.UserId == id.Value && !s.IsDeleted)
+                .OrderByDescending(s => s.SignTime)
+                .Take(20)
+                .ToListAsync();
+            ViewBag.SignInRecords = signInRecords;
+
+            // 取得遊戲記錄 (最近20筆)
+            var gameRecords = await _context.MiniGames
+                .Where(g => g.UserId == id.Value && !g.IsDeleted)
+                .OrderByDescending(g => g.StartTime)
+                .Take(20)
+                .ToListAsync();
+            ViewBag.GameRecords = gameRecords;
 
             return View(user);
         }

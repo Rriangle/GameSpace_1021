@@ -1,3 +1,4 @@
+using GameSpace.Areas.MiniGame.Models;
 using GameSpace.Models;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;

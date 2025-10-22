@@ -1,5 +1,6 @@
 ﻿﻿using System;
 using System.ComponentModel.DataAnnotations;
+using GameSpace.Areas.MiniGame.Models;
 using GameSpace.Models;
 
 namespace GameSpace.Areas.MiniGame.Models.ViewModels

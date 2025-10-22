@@ -1,4 +1,5 @@
 using GameSpace.Areas.MiniGame.Models;
+using GameSpace.Models;
 
 namespace GameSpace.Areas.MiniGame.Services
 {

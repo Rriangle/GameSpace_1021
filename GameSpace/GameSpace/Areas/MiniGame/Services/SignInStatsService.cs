@@ -1,6 +1,6 @@
-﻿using GameSpace.Areas.MiniGame.Models;
+﻿using GameSpace.Models;
 using GameSpace.Areas.MiniGame.Models.ViewModels;
-using GameSpace.Models;
+using GameSpace.Areas.MiniGame.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

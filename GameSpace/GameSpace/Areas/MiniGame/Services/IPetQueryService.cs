@@ -1,5 +1,5 @@
 ﻿using GameSpace.Areas.MiniGame.Models.ViewModels;
-using GameSpace.Models;
+using GameSpace.Areas.MiniGame.Models;
 
 namespace GameSpace.Areas.MiniGame.Services
 {

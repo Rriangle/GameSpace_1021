@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using GameSpace.Areas.MiniGame.Models;
 using GameSpace.Models;
 using GameSpace.Areas.social_hub.Auth;
 using Microsoft.AspNetCore.Authorization;
@@ -75,7 +76,7 @@ namespace GameSpace.Areas.MiniGame.Controllers
                 .OrderBy(r => r.RoleName)
                 .ToListAsync();
 
-            var viewModel = new AdminManagerIndexViewModel
+            var viewModel = new Models.ViewModels.AdminManagerIndexViewModel
             {
                 Managers = managers,
                 Roles = roles,

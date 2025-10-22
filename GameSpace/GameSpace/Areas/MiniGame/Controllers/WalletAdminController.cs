@@ -1,6 +1,7 @@
 ﻿using GameSpace.Areas.MiniGame.Models.ViewModels;
 using GameSpace.Areas.social_hub.Auth;
 using GameSpace.Infrastructure.Time;
+using GameSpace.Areas.MiniGame.Models;
 using GameSpace.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -266,7 +267,7 @@ namespace GameSpace.Areas.MiniGame.Controllers
             var totalCount = await source.CountAsync();
             var items = await source.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
-            var records = items.Select(x => new EVoucherReadModel
+            var records = items.Select(x => new Models.ViewModels.EVoucherReadModel
             {
                 EVoucherId = x.e.EvoucherId,
                 EVoucherCode = x.e.EvoucherCode,
@@ -288,7 +289,7 @@ namespace GameSpace.Areas.MiniGame.Controllers
             var model = new WalletEVouchersQueryViewModel
             {
                 Query = query,
-                Results = new PagedResult<EVoucherReadModel>
+                Results = new PagedResult<Models.ViewModels.EVoucherReadModel>
                 {
                     Items = records,
                     TotalCount = totalCount,

@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using GameSpace.Areas.MiniGame.Services;
 using GameSpace.Areas.MiniGame.Models;
+using GameSpace.Models;
 using GameSpace.Areas.MiniGame.Models.ViewModels;
 using Microsoft.EntityFrameworkCore;
-using GameSpace.Models;
 using System.Security.Claims;
 
 namespace GameSpace.Areas.MiniGame.Controllers

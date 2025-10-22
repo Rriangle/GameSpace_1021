@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using GameSpace.Areas.MiniGame.Models.ViewModels;
+using GameSpace.Areas.MiniGame.Models;
 using GameSpace.Models;
 
 namespace GameSpace.Areas.MiniGame.Services

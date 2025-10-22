@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using GameSpace.Areas.MiniGame.Models.Settings;
 using GameSpace.Areas.MiniGame.Services;
 using GameSpace.Areas.social_hub.Auth;
+using GameSpace.Areas.MiniGame.Models;
 using GameSpace.Models;
 using System.ComponentModel.DataAnnotations;
 

@@ -1,6 +1,6 @@
-﻿using GameSpace.Areas.MiniGame.Models;
-using GameSpace.Areas.MiniGame.Services;
+﻿using GameSpace.Areas.MiniGame.Services;
 using GameSpace.Areas.social_hub.Auth;
+using GameSpace.Areas.MiniGame.Models;
 using GameSpace.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -79,7 +79,7 @@ namespace GameSpace.Areas.MiniGame.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, PetBackgroundCostSetting model)
         {
-            if (id != model.Id) return NotFound();
+            if (id != model.SettingId) return NotFound();
 
             if (ModelState.IsValid)
             {

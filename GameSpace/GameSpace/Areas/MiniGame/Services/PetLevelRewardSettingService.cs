@@ -1,5 +1,4 @@
-﻿using GameSpace.Models;
-using GameSpace.Areas.MiniGame.Models;
+using GameSpace.Models;
 using GameSpace.Areas.MiniGame.Models.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,19 +20,20 @@ namespace GameSpace.Areas.MiniGame.Services
             try
             {
                 var settings = await _context.Set<PetLevelRewardSetting>()
-                    .OrderBy(s => s.Level)
-                    .ThenBy(s => s.RewardType)
+                    .Where(s => !s.IsDeleted)
+                    .OrderBy(s => s.DisplayOrder)
+                    .ThenBy(s => s.LevelRangeStart)
                     .Select(s => new PetLevelRewardSettingListViewModel
                     {
-                        Id = s.Id,
-                        Level = s.Level,
-                        RewardType = s.RewardType,
-                        RewardAmount = s.RewardAmount,
+                        SettingId = s.SettingId,
+                        LevelRangeStart = s.LevelRangeStart,
+                        LevelRangeEnd = s.LevelRangeEnd,
+                        PointsReward = s.PointsReward,
                         Description = s.Description,
-                        IsEnabled = s.IsEnabled,
+                        IsActive = s.IsActive,
+                        DisplayOrder = s.DisplayOrder,
                         CreatedAt = s.CreatedAt,
                         UpdatedAt = s.UpdatedAt,
-                        CreatedBy = s.CreatedBy,
                         UpdatedBy = s.UpdatedBy
                     })
                     .ToListAsync();
@@ -53,18 +53,18 @@ namespace GameSpace.Areas.MiniGame.Services
             try
             {
                 var setting = await _context.Set<PetLevelRewardSetting>()
-                    .Where(s => s.Id == id)
+                    .Where(s => s.SettingId == id && !s.IsDeleted)
                     .Select(s => new PetLevelRewardSettingViewModel
                     {
-                        Id = s.Id,
-                        Level = s.Level,
-                        RewardType = s.RewardType,
-                        RewardAmount = s.RewardAmount,
+                        SettingId = s.SettingId,
+                        LevelRangeStart = s.LevelRangeStart,
+                        LevelRangeEnd = s.LevelRangeEnd,
+                        PointsReward = s.PointsReward,
                         Description = s.Description,
-                        IsEnabled = s.IsEnabled,
+                        IsActive = s.IsActive,
+                        DisplayOrder = s.DisplayOrder,
                         CreatedAt = s.CreatedAt,
                         UpdatedAt = s.UpdatedAt,
-                        CreatedBy = s.CreatedBy,
                         UpdatedBy = s.UpdatedBy
                     })
                     .FirstOrDefaultAsync();
@@ -91,43 +91,51 @@ namespace GameSpace.Areas.MiniGame.Services
         {
             try
             {
-                // 驗證等級是否已存在
-                if (!await ValidateLevelAsync(model.Level))
+                // 驗證等級範圍是否有效
+                if (model.LevelRangeStart > model.LevelRangeEnd)
                 {
-                    _logger.LogWarning("等級 {Level} 已存在，無法建立重複的獎勵設定", model.Level);
+                    _logger.LogWarning("等級範圍無效：起始 {Start} 大於結束 {End}", model.LevelRangeStart, model.LevelRangeEnd);
+                    return null;
+                }
+
+                // 驗證等級範圍是否與現有設定重疊
+                if (!await ValidateLevelRangeAsync(model.LevelRangeStart, model.LevelRangeEnd))
+                {
+                    _logger.LogWarning("等級範圍 {Start}-{End} 與現有設定重疊", model.LevelRangeStart, model.LevelRangeEnd);
                     return null;
                 }
 
                 var setting = new PetLevelRewardSetting
                 {
-                    Level = model.Level,
-                    RewardType = model.RewardType,
-                    RewardAmount = model.RewardAmount,
+                    LevelRangeStart = model.LevelRangeStart,
+                    LevelRangeEnd = model.LevelRangeEnd,
+                    PointsReward = model.PointsReward,
                     Description = model.Description,
-                    IsEnabled = model.IsEnabled,
+                    IsActive = model.IsActive,
+                    DisplayOrder = model.DisplayOrder,
                     CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    CreatedBy = "System", // 實際應用中應從認證系統取得
-                    UpdatedBy = "System"
+                    UpdatedAt = null,
+                    UpdatedBy = null,
+                    IsDeleted = false
                 };
 
                 _context.Set<PetLevelRewardSetting>().Add(setting);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("成功建立寵物升級獎勵設定，等級: {Level}, 獎勵類型: {RewardType}", 
-                    model.Level, model.RewardType);
+                _logger.LogInformation("成功建立寵物升級獎勵設定，等級範圍: {Start}-{End}, 獎勵點數: {Points}",
+                    model.LevelRangeStart, model.LevelRangeEnd, model.PointsReward);
 
                 return new PetLevelRewardSettingViewModel
                 {
-                    Id = setting.Id,
-                    Level = setting.Level,
-                    RewardType = setting.RewardType,
-                    RewardAmount = setting.RewardAmount,
+                    SettingId = setting.SettingId,
+                    LevelRangeStart = setting.LevelRangeStart,
+                    LevelRangeEnd = setting.LevelRangeEnd,
+                    PointsReward = setting.PointsReward,
                     Description = setting.Description,
-                    IsEnabled = setting.IsEnabled,
+                    IsActive = setting.IsActive,
+                    DisplayOrder = setting.DisplayOrder,
                     CreatedAt = setting.CreatedAt,
                     UpdatedAt = setting.UpdatedAt,
-                    CreatedBy = setting.CreatedBy,
                     UpdatedBy = setting.UpdatedBy
                 };
             }
@@ -142,49 +150,58 @@ namespace GameSpace.Areas.MiniGame.Services
         {
             try
             {
-                var setting = await _context.Set<PetLevelRewardSetting>().FindAsync(model.Id);
+                var setting = await _context.Set<PetLevelRewardSetting>()
+                    .FirstOrDefaultAsync(s => s.SettingId == model.SettingId && !s.IsDeleted);
+
                 if (setting == null)
                 {
-                    _logger.LogWarning("找不到要更新的寵物升級獎勵設定 ID: {Id}", model.Id);
+                    _logger.LogWarning("找不到要更新的寵物升級獎勵設定 ID: {Id}", model.SettingId);
                     return null;
                 }
 
-                // 驗證等級是否已存在（排除自己）
-                if (!await ValidateLevelAsync(model.Level, model.Id))
+                // 驗證等級範圍是否有效
+                if (model.LevelRangeStart > model.LevelRangeEnd)
                 {
-                    _logger.LogWarning("等級 {Level} 已存在，無法更新", model.Level);
+                    _logger.LogWarning("等級範圍無效：起始 {Start} 大於結束 {End}", model.LevelRangeStart, model.LevelRangeEnd);
                     return null;
                 }
 
-                setting.Level = model.Level;
-                setting.RewardType = model.RewardType;
-                setting.RewardAmount = model.RewardAmount;
+                // 驗證等級範圍是否與現有設定重疊（排除自己）
+                if (!await ValidateLevelRangeAsync(model.LevelRangeStart, model.LevelRangeEnd, model.SettingId))
+                {
+                    _logger.LogWarning("等級範圍 {Start}-{End} 與現有設定重疊", model.LevelRangeStart, model.LevelRangeEnd);
+                    return null;
+                }
+
+                setting.LevelRangeStart = model.LevelRangeStart;
+                setting.LevelRangeEnd = model.LevelRangeEnd;
+                setting.PointsReward = model.PointsReward;
                 setting.Description = model.Description;
-                setting.IsEnabled = model.IsEnabled;
+                setting.IsActive = model.IsActive;
+                setting.DisplayOrder = model.DisplayOrder;
                 setting.UpdatedAt = DateTime.UtcNow;
-                setting.UpdatedBy = "System"; // 實際應用中應從認證系統取得
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("成功更新寵物升級獎勵設定 ID: {Id}", model.Id);
+                _logger.LogInformation("成功更新寵物升級獎勵設定 ID: {Id}", model.SettingId);
 
                 return new PetLevelRewardSettingViewModel
                 {
-                    Id = setting.Id,
-                    Level = setting.Level,
-                    RewardType = setting.RewardType,
-                    RewardAmount = setting.RewardAmount,
+                    SettingId = setting.SettingId,
+                    LevelRangeStart = setting.LevelRangeStart,
+                    LevelRangeEnd = setting.LevelRangeEnd,
+                    PointsReward = setting.PointsReward,
                     Description = setting.Description,
-                    IsEnabled = setting.IsEnabled,
+                    IsActive = setting.IsActive,
+                    DisplayOrder = setting.DisplayOrder,
                     CreatedAt = setting.CreatedAt,
                     UpdatedAt = setting.UpdatedAt,
-                    CreatedBy = setting.CreatedBy,
                     UpdatedBy = setting.UpdatedBy
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "更新寵物升級獎勵設定 ID: {Id} 時發生錯誤", model.Id);
+                _logger.LogError(ex, "更新寵物升級獎勵設定 ID: {Id} 時發生錯誤", model.SettingId);
                 throw;
             }
         }
@@ -193,14 +210,18 @@ namespace GameSpace.Areas.MiniGame.Services
         {
             try
             {
-                var setting = await _context.Set<PetLevelRewardSetting>().FindAsync(id);
+                var setting = await _context.Set<PetLevelRewardSetting>()
+                    .FirstOrDefaultAsync(s => s.SettingId == id && !s.IsDeleted);
+
                 if (setting == null)
                 {
                     _logger.LogWarning("找不到要刪除的寵物升級獎勵設定 ID: {Id}", id);
                     return false;
                 }
 
-                _context.Set<PetLevelRewardSetting>().Remove(setting);
+                // 軟刪除
+                setting.IsDeleted = true;
+                setting.DeletedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("成功刪除寵物升級獎勵設定 ID: {Id}", id);
@@ -217,21 +238,22 @@ namespace GameSpace.Areas.MiniGame.Services
         {
             try
             {
-                var setting = await _context.Set<PetLevelRewardSetting>().FindAsync(id);
+                var setting = await _context.Set<PetLevelRewardSetting>()
+                    .FirstOrDefaultAsync(s => s.SettingId == id && !s.IsDeleted);
+
                 if (setting == null)
                 {
                     _logger.LogWarning("找不到要切換狀態的寵物升級獎勵設定 ID: {Id}", id);
                     return false;
                 }
 
-                setting.IsEnabled = !setting.IsEnabled;
+                setting.IsActive = !setting.IsActive;
                 setting.UpdatedAt = DateTime.UtcNow;
-                setting.UpdatedBy = "System"; // 實際應用中應從認證系統取得
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("成功切換寵物升級獎勵設定 ID: {Id} 狀態為: {IsEnabled}", 
-                    id, setting.IsEnabled);
+                _logger.LogInformation("成功切換寵物升級獎勵設定 ID: {Id} 狀態為: {IsActive}",
+                    id, setting.IsActive);
                 return true;
             }
             catch (Exception ex)
@@ -245,44 +267,41 @@ namespace GameSpace.Areas.MiniGame.Services
         {
             try
             {
-                var query = _context.Set<PetLevelRewardSetting>().AsQueryable();
+                var query = _context.Set<PetLevelRewardSetting>()
+                    .Where(s => !s.IsDeleted)
+                    .AsQueryable();
 
-                if (searchModel.Level.HasValue)
+                if (searchModel.LevelRangeStart.HasValue)
                 {
-                    query = query.Where(s => s.Level == searchModel.Level.Value);
+                    query = query.Where(s => s.LevelRangeStart >= searchModel.LevelRangeStart.Value);
                 }
 
-                if (!string.IsNullOrEmpty(searchModel.RewardType))
+                if (searchModel.LevelRangeEnd.HasValue)
                 {
-                    query = query.Where(s => s.RewardType.Contains(searchModel.RewardType));
+                    query = query.Where(s => s.LevelRangeEnd <= searchModel.LevelRangeEnd.Value);
                 }
 
-                if (searchModel.IsEnabled.HasValue)
+                if (searchModel.IsActive.HasValue)
                 {
-                    query = query.Where(s => s.IsEnabled == searchModel.IsEnabled.Value);
-                }
-
-                if (!string.IsNullOrEmpty(searchModel.CreatedBy))
-                {
-                    query = query.Where(s => s.CreatedBy != null && s.CreatedBy.Contains(searchModel.CreatedBy));
+                    query = query.Where(s => s.IsActive == searchModel.IsActive.Value);
                 }
 
                 var settings = await query
-                    .OrderBy(s => s.Level)
-                    .ThenBy(s => s.RewardType)
+                    .OrderBy(s => s.DisplayOrder)
+                    .ThenBy(s => s.LevelRangeStart)
                     .Skip((searchModel.Page - 1) * searchModel.PageSize)
                     .Take(searchModel.PageSize)
                     .Select(s => new PetLevelRewardSettingListViewModel
                     {
-                        Id = s.Id,
-                        Level = s.Level,
-                        RewardType = s.RewardType,
-                        RewardAmount = s.RewardAmount,
+                        SettingId = s.SettingId,
+                        LevelRangeStart = s.LevelRangeStart,
+                        LevelRangeEnd = s.LevelRangeEnd,
+                        PointsReward = s.PointsReward,
                         Description = s.Description,
-                        IsEnabled = s.IsEnabled,
+                        IsActive = s.IsActive,
+                        DisplayOrder = s.DisplayOrder,
                         CreatedAt = s.CreatedAt,
                         UpdatedAt = s.UpdatedAt,
-                        CreatedBy = s.CreatedBy,
                         UpdatedBy = s.UpdatedBy
                     })
                     .ToListAsync();
@@ -301,26 +320,23 @@ namespace GameSpace.Areas.MiniGame.Services
         {
             try
             {
-                var query = _context.Set<PetLevelRewardSetting>().AsQueryable();
+                var query = _context.Set<PetLevelRewardSetting>()
+                    .Where(s => !s.IsDeleted)
+                    .AsQueryable();
 
-                if (searchModel.Level.HasValue)
+                if (searchModel.LevelRangeStart.HasValue)
                 {
-                    query = query.Where(s => s.Level == searchModel.Level.Value);
+                    query = query.Where(s => s.LevelRangeStart >= searchModel.LevelRangeStart.Value);
                 }
 
-                if (!string.IsNullOrEmpty(searchModel.RewardType))
+                if (searchModel.LevelRangeEnd.HasValue)
                 {
-                    query = query.Where(s => s.RewardType.Contains(searchModel.RewardType));
+                    query = query.Where(s => s.LevelRangeEnd <= searchModel.LevelRangeEnd.Value);
                 }
 
-                if (searchModel.IsEnabled.HasValue)
+                if (searchModel.IsActive.HasValue)
                 {
-                    query = query.Where(s => s.IsEnabled == searchModel.IsEnabled.Value);
-                }
-
-                if (!string.IsNullOrEmpty(searchModel.CreatedBy))
-                {
-                    query = query.Where(s => s.CreatedBy != null && s.CreatedBy.Contains(searchModel.CreatedBy));
+                    query = query.Where(s => s.IsActive == searchModel.IsActive.Value);
                 }
 
                 var totalCount = await query.CountAsync();
@@ -339,28 +355,23 @@ namespace GameSpace.Areas.MiniGame.Services
         {
             try
             {
-                var totalCount = await _context.Set<PetLevelRewardSetting>().CountAsync();
-                var enabledCount = await _context.Set<PetLevelRewardSetting>().CountAsync(s => s.IsEnabled);
+                var allSettings = await _context.Set<PetLevelRewardSetting>()
+                    .Where(s => !s.IsDeleted)
+                    .ToListAsync();
+
+                var totalCount = allSettings.Count;
+                var enabledCount = allSettings.Count(s => s.IsActive);
                 var disabledCount = totalCount - enabledCount;
-
-                var rewardTypeStats = await _context.Set<PetLevelRewardSetting>()
-                    .GroupBy(s => s.RewardType)
-                    .Select(g => new { RewardType = g.Key, Count = g.Count() })
-                    .ToListAsync();
-
-                var levelStats = await _context.Set<PetLevelRewardSetting>()
-                    .GroupBy(s => s.Level)
-                    .Select(g => new { Level = g.Key, Count = g.Count() })
-                    .OrderBy(s => s.Level)
-                    .ToListAsync();
 
                 var statistics = new Dictionary<string, object>
                 {
                     ["TotalCount"] = totalCount,
                     ["EnabledCount"] = enabledCount,
                     ["DisabledCount"] = disabledCount,
-                    ["RewardTypeStats"] = rewardTypeStats,
-                    ["LevelStats"] = levelStats
+                    ["TotalPointsReward"] = allSettings.Where(s => s.IsActive).Sum(s => s.PointsReward),
+                    ["AveragePointsReward"] = enabledCount > 0 ? allSettings.Where(s => s.IsActive).Average(s => s.PointsReward) : 0,
+                    ["MinLevelCovered"] = allSettings.Any() ? allSettings.Min(s => s.LevelRangeStart) : 0,
+                    ["MaxLevelCovered"] = allSettings.Any() ? allSettings.Max(s => s.LevelRangeEnd) : 0
                 };
 
                 _logger.LogInformation("成功取得寵物升級獎勵設定統計資料");
@@ -373,46 +384,57 @@ namespace GameSpace.Areas.MiniGame.Services
             }
         }
 
-        public async Task<bool> ValidateLevelAsync(int level, int? excludeId = null)
+        public async Task<bool> ValidateLevelRangeAsync(int start, int end, int? excludeId = null)
         {
             try
             {
-                var query = _context.Set<PetLevelRewardSetting>().Where(s => s.Level == level);
-                
+                var query = _context.Set<PetLevelRewardSetting>()
+                    .Where(s => !s.IsDeleted);
+
                 if (excludeId.HasValue)
                 {
-                    query = query.Where(s => s.Id != excludeId.Value);
+                    query = query.Where(s => s.SettingId != excludeId.Value);
                 }
 
-                var exists = await query.AnyAsync();
-                return !exists; // 如果不存在則返回 true（可以建立）
+                // 檢查範圍是否與現有設定重疊
+                var hasOverlap = await query.AnyAsync(s =>
+                    (start >= s.LevelRangeStart && start <= s.LevelRangeEnd) ||
+                    (end >= s.LevelRangeStart && end <= s.LevelRangeEnd) ||
+                    (start <= s.LevelRangeStart && end >= s.LevelRangeEnd)
+                );
+
+                return !hasOverlap; // 如果沒有重疊則返回 true（可以建立）
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "驗證等級 {Level} 時發生錯誤", level);
+                _logger.LogError(ex, "驗證等級範圍 {Start}-{End} 時發生錯誤", start, end);
                 throw;
             }
         }
 
-        public async Task<IEnumerable<string>> GetRewardTypesAsync()
+        public async Task<int> GetRewardPointsForLevelAsync(int level)
         {
             try
             {
-                var rewardTypes = await _context.Set<PetLevelRewardSetting>()
-                    .Select(s => s.RewardType)
-                    .Distinct()
-                    .OrderBy(rt => rt)
-                    .ToListAsync();
+                var setting = await _context.Set<PetLevelRewardSetting>()
+                    .Where(s => !s.IsDeleted && s.IsActive)
+                    .Where(s => level >= s.LevelRangeStart && level <= s.LevelRangeEnd)
+                    .FirstOrDefaultAsync();
 
-                _logger.LogInformation("成功取得所有獎勵類型，共 {Count} 種", rewardTypes.Count);
-                return rewardTypes;
+                if (setting != null)
+                {
+                    _logger.LogInformation("等級 {Level} 的獎勵點數: {Points}", level, setting.PointsReward);
+                    return setting.PointsReward;
+                }
+
+                _logger.LogWarning("找不到等級 {Level} 對應的獎勵設定", level);
+                return 0;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "取得獎勵類型時發生錯誤");
+                _logger.LogError(ex, "取得等級 {Level} 獎勵點數時發生錯誤", level);
                 throw;
             }
         }
     }
 }
-

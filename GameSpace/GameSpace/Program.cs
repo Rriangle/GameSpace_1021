@@ -3,6 +3,7 @@
 using GameSpace.Areas.social_hub.Auth;          // ★ IUserContextReader, AuthConstants
 using GameSpace.Areas.social_hub.Hubs;
 using GameSpace.Areas.social_hub.Permissions;
+using GameSpace.Areas.MiniGame.config;          // ★ MiniGame Area 服務註冊
 using GameSpace.Data;
 using GameSpace.Infrastructure.Login;
 using GameSpace.Infrastructure.Time;
@@ -42,6 +43,9 @@ namespace GameSpace
 			builder.Services.AddDbContext<ApplicationDbContext>(opt => opt.UseSqlServer(identityConn));
 			builder.Services.AddDbContext<GameSpacedatabaseContext>(opt => opt.UseSqlServer(gameSpaceConn));
 			builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+			// ========== 2.5) MiniGame Area 服務註冊 ==========
+			builder.Services.AddMiniGameServices(builder.Configuration);
 
 			// ========== 3) Identity ==========
 			builder.Services
@@ -170,6 +174,10 @@ namespace GameSpace
 			// ========== 11) 授權政策（需要就用） ==========
 			builder.Services.AddAuthorization(options =>
 			{
+				// MiniGame Area 管理員政策
+				options.AddPolicy("AdminOnly", p => p.RequireClaim("IsManager", "true"));
+
+				// 其他細緻權限政策
 				options.AddPolicy("CanManageShopping", p => p.RequireClaim("perm:Shopping", "true"));
 				options.AddPolicy("CanAdmin", p => p.RequireClaim("perm:Admin", "true"));
 				options.AddPolicy("CanMessage", p => p.RequireClaim("perm:Message", "true"));

@@ -1,4 +1,5 @@
 using GameSpace.Areas.MiniGame.Models;
+using GameSpace.Models;
 using System.Text.Json;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
@@ -51,7 +52,7 @@ namespace GameSpace.Areas.MiniGame.Services
 
                 var json = await File.ReadAllTextAsync(_dataFilePath, System.Text.Encoding.UTF8);
                 var settings = JsonSerializer.Deserialize<List<PetSkinColorCostSetting>>(json, JsonOptions) ?? new List<PetSkinColorCostSetting>();
-                return settings.OrderBy(s => s.RequiredPoints).ThenBy(s => s.ColorName);
+                return settings.OrderBy(s => s.PointsCost).ThenBy(s => s.ColorName);
             }
             finally
             {
@@ -65,7 +66,7 @@ namespace GameSpace.Areas.MiniGame.Services
         public async Task<PetSkinColorCostSetting?> GetByIdAsync(int id)
         {
             var settings = await GetAllAsync();
-            return settings.FirstOrDefault(s => s.Id == id);
+            return settings.FirstOrDefault(s => s.SettingId == id);
         }
 
         /// <summary>
@@ -84,7 +85,7 @@ namespace GameSpace.Areas.MiniGame.Services
                     return false;
                 }
 
-                setting.Id = _nextId++;
+                setting.SettingId = _nextId++;
                 setting.CreatedAt = DateTime.UtcNow;
                 setting.IsActive = true;
 
@@ -111,22 +112,22 @@ namespace GameSpace.Areas.MiniGame.Services
             try
             {
                 var settings = (await GetAllAsync()).ToList();
-                var existingSetting = settings.FirstOrDefault(s => s.Id == setting.Id);
-                
+                var existingSetting = settings.FirstOrDefault(s => s.SettingId == setting.SettingId);
+
                 if (existingSetting == null)
                 {
                     return false;
                 }
 
                 // 檢查顏色代碼是否被其他記錄使用
-                if (settings.Any(s => s.Id != setting.Id && s.ColorCode.Equals(setting.ColorCode, StringComparison.OrdinalIgnoreCase)))
+                if (settings.Any(s => s.SettingId != setting.SettingId && s.ColorCode.Equals(setting.ColorCode, StringComparison.OrdinalIgnoreCase)))
                 {
                     return false;
                 }
 
                 existingSetting.ColorName = setting.ColorName;
                 existingSetting.ColorCode = setting.ColorCode;
-                existingSetting.RequiredPoints = setting.RequiredPoints;
+                existingSetting.PointsCost = setting.PointsCost;
                 existingSetting.IsActive = setting.IsActive;
                 existingSetting.Description = setting.Description;
                 existingSetting.UpdatedAt = DateTime.UtcNow;
@@ -153,7 +154,7 @@ namespace GameSpace.Areas.MiniGame.Services
             try
             {
                 var settings = (await GetAllAsync()).ToList();
-                var setting = settings.FirstOrDefault(s => s.Id == id);
+                var setting = settings.FirstOrDefault(s => s.SettingId == id);
                 
                 if (setting == null)
                 {
@@ -180,7 +181,7 @@ namespace GameSpace.Areas.MiniGame.Services
         public async Task<IEnumerable<PetSkinColorCostSetting>> GetActiveSettingsAsync()
         {
             var settings = await GetAllAsync();
-            return settings.Where(s => s.IsActive).OrderBy(s => s.RequiredPoints);
+            return settings.Where(s => s.IsActive).OrderBy(s => s.PointsCost);
         }
 
         /// <summary>
@@ -234,7 +235,7 @@ namespace GameSpace.Areas.MiniGame.Services
         public async Task<int> GetCostByColorCodeAsync(string colorCode)
         {
             var setting = await GetByColorCodeAsync(colorCode);
-            return setting?.RequiredPoints ?? 0;
+            return setting?.PointsCost ?? 0;
         }
 
         /// <summary>
@@ -246,7 +247,7 @@ namespace GameSpace.Areas.MiniGame.Services
             try
             {
                 var settings = (await GetAllAsync()).ToList();
-                var setting = settings.FirstOrDefault(s => s.Id == id);
+                var setting = settings.FirstOrDefault(s => s.SettingId == id);
                 
                 if (setting == null)
                 {
@@ -277,7 +278,7 @@ namespace GameSpace.Areas.MiniGame.Services
             try
             {
                 var settings = (await GetAllAsync()).ToList();
-                var setting = settings.FirstOrDefault(s => s.Id == id);
+                var setting = settings.FirstOrDefault(s => s.SettingId == id);
                 
                 if (setting == null)
                 {
@@ -319,10 +320,10 @@ namespace GameSpace.Areas.MiniGame.Services
                 
                 foreach (var mapping in costMapping)
                 {
-                    var setting = settings.FirstOrDefault(s => s.Id == mapping.Key);
+                    var setting = settings.FirstOrDefault(s => s.SettingId == mapping.Key);
                     if (setting != null)
                     {
-                        setting.RequiredPoints = mapping.Value;
+                        setting.PointsCost = mapping.Value;
                         setting.UpdatedAt = DateTime.UtcNow;
                     }
                 }
@@ -364,32 +365,32 @@ namespace GameSpace.Areas.MiniGame.Services
             var now = DateTime.UtcNow;
             var defaultSettings = new List<PetSkinColorCostSetting>
             {
-                new PetSkinColorCostSetting 
-                { 
-                    Id = 1, 
+                new PetSkinColorCostSetting
+                {
+                    SettingId = 1, 
                     ColorName = "經典紅色", 
                     ColorCode = "#FF0000", 
-                    RequiredPoints = 2000, 
+                    PointsCost = 2000, 
                     IsActive = true, 
                     CreatedAt = now, 
                     Description = "預設種子資料 - 經典紅色" 
                 },
-                new PetSkinColorCostSetting 
-                { 
-                    Id = 2, 
+                new PetSkinColorCostSetting
+                {
+                    SettingId = 2, 
                     ColorName = "經典藍色", 
                     ColorCode = "#0000FF", 
-                    RequiredPoints = 2000, 
+                    PointsCost = 2000, 
                     IsActive = true, 
                     CreatedAt = now, 
                     Description = "預設種子資料 - 經典藍色" 
                 },
-                new PetSkinColorCostSetting 
-                { 
-                    Id = 3, 
+                new PetSkinColorCostSetting
+                {
+                    SettingId = 3, 
                     ColorName = "經典綠色", 
                     ColorCode = "#00FF00", 
-                    RequiredPoints = 2000, 
+                    PointsCost = 2000, 
                     IsActive = true, 
                     CreatedAt = now, 
                     Description = "預設種子資料 - 經典綠色" 

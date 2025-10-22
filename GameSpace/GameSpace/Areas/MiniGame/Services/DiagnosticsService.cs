@@ -1,5 +1,5 @@
-﻿using GameSpace.Areas.MiniGame.Models;
-using GameSpace.Models;
+﻿using GameSpace.Models;
+using GameSpace.Areas.MiniGame.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 

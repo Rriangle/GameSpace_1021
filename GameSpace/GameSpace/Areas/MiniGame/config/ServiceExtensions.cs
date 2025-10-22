@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using GameSpace.Models;
+using GameSpace.Areas.MiniGame.Models;
 using GameSpace.Areas.MiniGame.Services;
 
 namespace GameSpace.Areas.MiniGame.config

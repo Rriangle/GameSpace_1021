@@ -1,4 +1,4 @@
-﻿@model GameSpace.Areas.MiniGame.Models.PetBackgroundCostSetting
+﻿@model GameSpace.Models.PetBackgroundCostSetting
 
 @{
     ViewData["Title"] = "新增寵物換背景成本設定";
@@ -35,9 +35,9 @@
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="RequiredPoints" class="control-label">所需點數</label>
-                    <input asp-for="RequiredPoints" class="form-control" type="number" min="0" placeholder="請輸入所需點數" />
-                    <span asp-validation-for="RequiredPoints" class="text-danger"></span>
+                    <label asp-for="PointsCost" class="control-label">所需點數</label>
+                    <input asp-for="PointsCost" class="form-control" type="number" min="0" placeholder="請輸入所需點數" />
+                    <span asp-validation-for="PointsCost" class="text-danger"></span>
                 </div>
 
                 <div class="form-group">
