@@ -45,6 +45,7 @@ namespace GameSpace.Areas.MiniGame.Services
                 pageSize = Math.Clamp(pageSize, 10, 100);
 
                 var query = _context.Set<SignInRule>()
+                    .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
                     .AsNoTracking()
                     .OrderBy(r => r.SignInDay);
 
@@ -98,6 +99,7 @@ namespace GameSpace.Areas.MiniGame.Services
             try
             {
                 var rule = await _context.Set<SignInRule>()
+                    .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
                     .AsNoTracking()
                     .FirstOrDefaultAsync(r => r.Id == id);
 
@@ -380,6 +382,7 @@ namespace GameSpace.Areas.MiniGame.Services
             try
             {
                 var rules = await _context.Set<SignInRule>()
+                    .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
                     .AsNoTracking()
                     .Where(r => r.IsActive)
                     .OrderBy(r => r.SignInDay)

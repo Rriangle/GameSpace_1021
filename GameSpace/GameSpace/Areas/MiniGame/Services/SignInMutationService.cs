@@ -78,7 +78,9 @@ namespace GameSpace.Areas.MiniGame.Services
             try
             {
                 // Find the existing rule
-                var rule = await _context.Set<SignInRule>().FindAsync(ruleId);
+                var rule = await _context.Set<SignInRule>()
+                    .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
+                    .FirstOrDefaultAsync(r => r.Id == ruleId);
                 if (rule == null)
                 {
                     return (false, "找不到指定的簽到規則");
@@ -121,7 +123,9 @@ namespace GameSpace.Areas.MiniGame.Services
         {
             try
             {
-                var rule = await _context.Set<SignInRule>().FindAsync(ruleId);
+                var rule = await _context.Set<SignInRule>()
+                    .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
+                    .FirstOrDefaultAsync(r => r.Id == ruleId);
                 if (rule == null)
                 {
                     return (false, "找不到指定的簽到規則");
@@ -187,6 +191,7 @@ namespace GameSpace.Areas.MiniGame.Services
                 // Get the appropriate sign-in rule based on consecutive days
                 var consecutiveDays = await GetUserConsecutiveDaysAsync(model.UserId, signDate);
                 var rule = await _context.Set<SignInRule>()
+                    .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
                     .Where(r => r.SignInDay == consecutiveDays && r.IsActive)
                     .FirstOrDefaultAsync();
 
@@ -324,6 +329,7 @@ namespace GameSpace.Areas.MiniGame.Services
 
             // Check for duplicate SignInDay
             var duplicateQuery = _context.Set<SignInRule>()
+                .FromSqlRaw("SELECT * FROM SignInRule WHERE IsDeleted = 0")
                 .Where(r => r.SignInDay == model.SignInDay && r.IsActive);
 
             if (excludeRuleId.HasValue)
